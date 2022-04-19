@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'pages/MainPage.dart';
 
+String appName = "NVMA";
+
 void main() {
   runApp(const MyApp());
 }

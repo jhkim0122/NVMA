@@ -2,8 +2,6 @@ import 'dart:collection';
 
 import 'dart:io';
 
-import 'dart:typed_data';
-
 import '../utils/PathFormat.dart';
 
 abstract class DataDestination {
@@ -24,7 +22,7 @@ class Logger extends DataDestination {
   var appName;
   String postFix = "";
 
-  Logger() {
+  Logger(this.appName, {this.postFix = ""}) {
     _buffer = Queue<int>();
     _timestamps = Queue<double>();
   }
