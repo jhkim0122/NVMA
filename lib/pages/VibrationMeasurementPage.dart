@@ -4,10 +4,10 @@ import '../models/DataSource.dart';
 import '../views/GaugeView.dart';
 
 class VibrationMeasurementPage extends StatefulWidget{
-  final BlueConnection btConnection;
+  final List<BlueConnection> btConnectionList;
   final TcpConnection tcpConnection;
   final Map sensorTimeDataModelsMap;
-  const VibrationMeasurementPage(this.btConnection, this.tcpConnection, this.sensorTimeDataModelsMap, {key}) : super(key:key);
+  const VibrationMeasurementPage(this.btConnectionList, this.tcpConnection, this.sensorTimeDataModelsMap, {key}) : super(key:key);
 
   @override
   _VibrationMeasurementPageState createState() => _VibrationMeasurementPageState();

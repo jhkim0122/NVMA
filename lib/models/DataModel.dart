@@ -16,7 +16,7 @@ class RealtimeSensorTimeDataModel extends DataModel{
   var _delta = 1.0;
   var _samplingCounter = 0.0;
   var maxLength = 1000;
-  RealtimeSensorTimeDataModel(this._samplingRate, this.originalDataSamplingRate, this.maxLength){
+  RealtimeSensorTimeDataModel(this._samplingRate, this.originalDataSamplingRate, {this.maxLength = 1000}){
     data = Queue<double>();
     _delta = originalDataSamplingRate / _samplingRate;
     _samplingCounter = _delta;

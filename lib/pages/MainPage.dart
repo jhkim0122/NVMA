@@ -1,11 +1,14 @@
 
 import 'package:flutter/material.dart';
 
+import '../main.dart';
 import '../models/DataDestination.dart';
 import '../models/DataModel.dart';
 import '../models/DataSource.dart';
 import '../models/Parser.dart';
 import '../models/Processor.dart';
+import '../models/options/BluetoothOptions.dart';
+import '../models/options/SensorOptions.dart';
 import '../utils/NVMABottomNavigationBar.dart';
 import 'NoiseMeasurementPage.dart';
 import 'VibrationMeasurementPage.dart';
@@ -18,37 +21,42 @@ class MainPage extends StatefulWidget{
 }
 
 class _MainPageState extends State<MainPage> {
-  int selectedIndex = 9999; // MainPage
+  final int _mainIndex = 9999;
   final int _noiseIndex = 0;
   final int _vibIndex = 1;
+  late int selectedIndex;
 
   var sensorTimeDataModelsMap = Map<String, RealtimeSensorTimeDataModel>();
   late MicCapture _micCapture;
-  late BlueConnection _btConnection;
   late TcpConnection _tcpConnection;
+  final List<BlueConnection> _btConnectionList = [];
+
+  var sensorOptions = SensorOptions();
+  var bluetoothOptions = BluetoothOptions();
 
   var _pageView;
 
   @override
   initState() {
     super.initState();
+    selectedIndex = _mainIndex;
+
     _micCapture = MicCapture();
     var _micParser = InternalMicParser(sensorTimeDataModelsMap);
-    var _micProcessor = ConvertToByteDataProcessor()..setDestination(Logger());
+    var _micProcessor = ConvertToByteDataProcessor()..setDestination(Logger(appName));
     _micParser.setProcessor(_micProcessor);
     _micCapture.setParser(InternalMicParser(sensorTimeDataModelsMap));
 
-    _btConnection = BlueConnection();
-    var _btParser = Esp32AdxlParser(0, sensorTimeDataModelsMap);
-    var _btProcessor = ConvertToByteDataProcessor()..setDestination(Logger());
-    _btParser.setProcessor(_btProcessor);
-    _btConnection.setParser(_btParser);
-
     _tcpConnection = TcpConnection();
     var _tcpParser = NVDSDataParser(sensorTimeDataModelsMap);
-    var _tcpProcessor = ConvertToByteDataProcessor()..setDestination(Logger());
+    var _tcpProcessor = ConvertToByteDataProcessor()..setDestination(Logger(appName));
     _tcpParser.setProcessor(_tcpProcessor);
     _tcpConnection.setParser(_tcpParser);
+
+    sensorOptions.load();
+    bluetoothOptions.load();
+    bluetoothOptions.loadJsonAsync('bluetooth_CAN.json');
+    _getBluetoothConnections();
 
     _getPageView(selectedIndex);
   }
@@ -61,8 +69,8 @@ class _MainPageState extends State<MainPage> {
   void _getPageView(index){
     _pageView = WillPopScope(
         onWillPop: () async{
-          if(selectedIndex != 9999) {
-            selectedIndex = 9999;
+          if(selectedIndex != _mainIndex) {
+            selectedIndex = _mainIndex;
             _getPageView(selectedIndex);
             setState((){});
             return false;
@@ -86,7 +94,7 @@ class _MainPageState extends State<MainPage> {
         leading : IconButton(
             icon : const Icon(Icons.arrow_back),
             onPressed:() => setState((){
-              selectedIndex = 9999;
+              selectedIndex = _mainIndex;
               _getPageView(selectedIndex);
             }),
         ),
@@ -97,7 +105,7 @@ class _MainPageState extends State<MainPage> {
       return AppBar(
         leading : IconButton(
           icon : const Icon(Icons.arrow_back),
-          onPressed:() => setState((){selectedIndex = 9999;
+          onPressed:() => setState((){selectedIndex = _mainIndex;
           _getPageView(selectedIndex);}),
         ),
         title: const Text("Vibration Measurement Page"),
@@ -115,7 +123,7 @@ class _MainPageState extends State<MainPage> {
     if(index == 0){
       return NoiseMeasurementPage(_micCapture, sensorTimeDataModelsMap);
     } else if(index == 1) {
-      return VibrationMeasurementPage(_btConnection, _tcpConnection, sensorTimeDataModelsMap);
+      return VibrationMeasurementPage(_btConnectionList, _tcpConnection, sensorTimeDataModelsMap);
     } else { // Main page
       return SingleChildScrollView(
             padding: const EdgeInsets.only(top:10, left:15, right:15),
@@ -164,6 +172,35 @@ class _MainPageState extends State<MainPage> {
     }
     else {
       return const SizedBox();
+    }
+  }
+
+  void _getBluetoothConnections() {
+    if (bluetoothOptions.map.isNotEmpty) {
+      bluetoothOptions.map.forEach((k, v) {
+        BlueConnection _btConnection = BlueConnection();
+        _btConnection.name = v;
+        _btConnection.address = k;
+        _btConnection = BlueConnection();
+        var _btParser = Esp32AdxlParser(0, sensorTimeDataModelsMap);
+        var _btProcessor = ConvertToByteDataProcessor()..setDestination(Logger(appName));
+        _btParser.setProcessor(_btProcessor);
+        _btConnection.setParser(_btParser);
+        for (int i = 1; i < 4; i++) {
+          if (!sensorOptions.map.containsKey('di' + ((_btConnectionList.length * 3) + i).toString() + "_type")) {
+            sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_type"] = "Vibration";
+            sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_sensitivity"] = 26122.0;
+            if (i == 1) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "X";
+            else if (i == 2) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "Y";
+            else if (i == 3) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "Z";
+          }
+          sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString()] = 'disconnected';
+          sensorTimeDataModelsMap['di' + ((_btConnectionList.length * 3) + i).toString()] = RealtimeSensorTimeDataModel(4096, 2000);
+          sensorTimeDataModelsMap['di' + ((_btConnectionList.length * 3) + i).toString()]?.setOriginalDataSamplingRate(4000.0);
+        }
+        sensorOptions.save();
+        _btConnectionList.add(_btConnection);
+      });
     }
   }
 }
