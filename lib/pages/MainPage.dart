@@ -42,6 +42,9 @@ class _MainPageState extends State<MainPage> {
     selectedIndex = _mainIndex;
 
     _micCapture = MicCapture();
+    RealtimeSensorTimeDataModel micTimeDataModel = RealtimeSensorTimeDataModel(4096, 4000);
+    micTimeDataModel.setOriginalDataSamplingRate(48000.0);
+    sensorTimeDataModelsMap["internal mic"] = micTimeDataModel;
     var _micParser = InternalMicParser(sensorTimeDataModelsMap);
     var _micProcessor = ConvertToByteDataProcessor()..setDestination(Logger(appName));
     _micParser.setProcessor(_micProcessor);
