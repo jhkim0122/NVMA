@@ -4,45 +4,28 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class GaugeView extends StatefulWidget{
-  final String title;
-  const GaugeView(this.title, {key}) : super(key:key);
+  final double minValue;
+  final double maxValue;
+  final String unit;
+  final double currentValue;
+  const GaugeView(this.minValue, this.maxValue, this.unit, this.currentValue, {key}) : super(key:key);
 
   @override
   _GaugeViewState createState() => _GaugeViewState();
 }
 
 class _GaugeViewState extends State<GaugeView> {
-  late Timer _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(Duration(milliseconds: 100), (timer) {
-      if(mounted) setState((){});
-    });
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _timer.cancel();
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: SfRadialGauge(
-          title: GaugeTitle(
-              text: widget.title,
-              textStyle: const TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+    return SfRadialGauge(
           axes: <RadialAxis>[
             RadialAxis(
-                minimum: 0, maximum: 60,
+                minimum: widget.minValue, maximum: widget.maxValue,
                 ranges: <GaugeRange>[
                   GaugeRange(
-                      startValue: 0,
-                      endValue: 60,
+                      startValue: widget.minValue,
+                      endValue: widget.maxValue,
                       gradient: SweepGradient(
                         colors: [Colors.yellow, Colors.orange, Colors.yellow.shade900, Colors.deepOrange, Colors.redAccent, Colors.red, Colors.red.shade900, Colors.black],
                       ),
@@ -51,21 +34,27 @@ class _GaugeViewState extends State<GaugeView> {
                 ],
                 pointers: <GaugePointer>[
                   NeedlePointer(
-                    value: DateTime.now().second+ (DateTime.now().millisecond/1000),
+                    value: widget.currentValue,
                     needleLength: 0.8,
                     knobStyle: const KnobStyle(knobRadius:0.06),
                   )
                 ],
                 annotations: <GaugeAnnotation>[
                   GaugeAnnotation(
-                      widget: Text(
-                          (DateTime.now().second+ (DateTime.now().millisecond/1000)).toStringAsFixed(1),
-                          style: const TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
+                      widget: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize:MainAxisSize.min,
+                        children:[
+                          Text((widget.currentValue).toStringAsFixed(1),
+                              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+                          Text(widget.unit,
+                              style: const TextStyle(fontSize: 20)),
+                      ]),
                       angle: 90,
                       positionFactor: 0.3)
                 ])
-              ])
-    );
+              ]);
   }
   
 }
