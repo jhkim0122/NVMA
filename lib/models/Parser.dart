@@ -103,12 +103,11 @@ class NVDSDataParser extends Parser {
   }
 
   _insertToSensorTimeDataModel(key, value){
-    for(int i=0; i<sensorDataModel.length; i++){
-      if(!sensorDataModel[i].containsKey(key)){
+      if(!sensorDataModel.containsKey(key)){
         return ;
+      } else {
+        sensorDataModel[key].add(value);
       }
-      sensorDataModel[i][key].add(value);
-    }
   }
 
   @override
@@ -145,12 +144,12 @@ class Esp32AdxlParser extends Parser {
     startI = start;
   }
 
+
   _insertToSensorTimeDataModel(key, value){
-    for(int i=0; i<sensorDataModel.length; i++){
-      if(!sensorDataModel[i].containsKey(key)){
-        return ;
-      }
-      sensorDataModel[i][key].add(value);
+    if(!sensorDataModel.containsKey(key)){
+      return ;
+    } else {
+      sensorDataModel[key].add(value);
     }
   }
 
@@ -214,8 +213,10 @@ class InternalMicParser extends Parser {
   @override
   _parseBlock(dataInput, startIndex, sending) {
     var value = dataInput.buffer.asByteData().getInt16(startIndex, Endian.little);
-    sensorDataModel.add(value*_sensitivity);
+    sensorDataModel["internal mic"].add(value*_sensitivity);
     if(doSend) _processor.process2Byte('', value);
+
+    return 0;
   }
 
 }
