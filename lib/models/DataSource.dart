@@ -1,7 +1,11 @@
 import 'dart:io';
 
+import 'package:bot_toast/bot_toast.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:mic_stream/mic_stream.dart';
+
+import 'options/SensorOptions.dart';
 
 abstract class DataSource {
   var _parser;
@@ -26,6 +30,7 @@ abstract class DataSource {
 
 class MicCapture extends DataSource {
   bool isActive = false;
+  var _subscription;
 
   @override
   activate() async{
@@ -34,15 +39,15 @@ class MicCapture extends DataSource {
         channelConfig: ChannelConfig.CHANNEL_IN_MONO,
         audioFormat: AudioFormat.ENCODING_PCM_16BIT);
 
-    stream?.listen((samples){
-      if(samples == null) isActive = false;
-      else isActive = true;
-      _parser.parse(samples);
+    isActive = true;
+    _subscription = stream?.listen((samples){
+      if(isActive) _parser.parse(samples);
     });
   }
 
   @override
   deactivate() {
+    _subscription.cancel();
     isActive = false;
   }
 
@@ -63,6 +68,11 @@ class BlueConnection extends DataSource {
   var address = " ";
   BluetoothConnection? blueConnection;
   bool isResetting = false;
+  late SensorOptions sensorOptions;
+
+  setSensorOptions(options){
+    sensorOptions = options;
+  }
 
   static discovery() async{
     var devices = await FlutterBluetoothSerial.instance.getBondedDevices();
@@ -71,13 +81,7 @@ class BlueConnection extends DataSource {
     return ret;
   }
 
-  @override
-  activate() async{
-    if(isActivate()){
-      deactivate();
-      return;
-    }
-
+  _tryToConnect() async{
     await BluetoothConnection.toAddress(address).then((_connection) {
       blueConnection = _connection;
       blueConnection?.input?.listen((data){
@@ -97,10 +101,44 @@ class BlueConnection extends DataSource {
   }
 
   @override
+  activate() async{
+    var index = _parser.startI;
+
+    try {
+      await _tryToConnect().then((_) {
+            for(int i=1; i<4; i++){
+              sensorOptions.map['di'+(index+i).toString()] = name;
+            }
+          BotToast.showText(text: name + " - Connected",
+            duration: const Duration(seconds: 2),
+            align: const Alignment(0, 0),);
+      });
+    } catch (e) {
+      for(int i=1; i<4; i++){
+        sensorOptions.map['di'+(index+i).toString()] = 'disconnected';
+      }
+      BotToast.showText(text: "찾을 수 없는 디바이스입니다.",
+        duration: const Duration(seconds: 2),
+        align: const Alignment(0, 0),);
+    }
+  }
+
+  @override
   deactivate() {
-    blueConnection?.close();
-    _parser.resetLogger();
-    _parser.reset();
+    if(isActivate()) {
+      blueConnection?.close();
+      _parser.reset();
+
+      var index = _parser.startI;
+      for(int i=1; i<4; i++){
+        sensorOptions.map['di'+(index+i).toString()] = 'disconnected';
+      }
+      BotToast.showText(text: name + " - Disconnected",
+        duration: const Duration(seconds: 1),
+        align: const Alignment(0, 0),);
+
+      sensorOptions.save();
+    }
   }
 
   @override
@@ -142,7 +180,6 @@ class TcpConnection extends DataSource {
       _clientSocket?.destroy();
       _clientSocket = null;
     }
-    _parser.resetLogger();
     _parser.reset();
   }
 
