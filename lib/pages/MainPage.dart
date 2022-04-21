@@ -11,6 +11,7 @@ import '../models/options/BluetoothOptions.dart';
 import '../models/options/SensorOptions.dart';
 import '../utils/NVMABottomNavigationBar.dart';
 import 'NoiseMeasurementPage.dart';
+import 'SettingPage.dart';
 import 'VibrationMeasurementPage.dart';
 
 class MainPage extends StatefulWidget{
@@ -24,6 +25,7 @@ class _MainPageState extends State<MainPage> {
   final int _mainIndex = 9999;
   final int _noiseIndex = 0;
   final int _vibIndex = 1;
+  final int _settingIndex = 2;
   late int selectedIndex;
 
   var sensorTimeDataModelsMap = Map<String, RealtimeSensorTimeDataModel>();
@@ -57,8 +59,6 @@ class _MainPageState extends State<MainPage> {
     _tcpConnection.setParser(_tcpParser);
 
     sensorOptions.load();
-    bluetoothOptions.load();
-    bluetoothOptions.loadJsonAsync('bluetooth_CAN.json');
     _getBluetoothConnections();
 
     _getPageView(selectedIndex);
@@ -114,6 +114,16 @@ class _MainPageState extends State<MainPage> {
         title: const Text("Vibration Measurement Page"),
         elevation:3.0,
       );
+    } else if(index == 2) {
+      return AppBar(
+        leading : IconButton(
+          icon : const Icon(Icons.arrow_back),
+          onPressed:() => setState((){selectedIndex = _mainIndex;
+          _getPageView(selectedIndex);}),
+        ),
+        title: const Text("Setting Page"),
+        elevation:3.0,
+      );
     } else { // Main page
       return AppBar(
         title: const Text("Noise Vibration Measurement App", style: TextStyle(fontSize:20, fontWeight: FontWeight.bold)),
@@ -127,6 +137,8 @@ class _MainPageState extends State<MainPage> {
       return NoiseMeasurementPage(_micCapture, sensorTimeDataModelsMap);
     } else if(index == 1) {
       return VibrationMeasurementPage(_btConnectionList, _tcpConnection, sensorTimeDataModelsMap);
+    } else if(index == 2) {
+      return SettingPage(_micCapture, _btConnectionList, _tcpConnection, sensorTimeDataModelsMap, bluetoothOptions, sensorOptions);
     } else { // Main page
       return SingleChildScrollView(
             padding: const EdgeInsets.only(top:10, left:15, right:15),
@@ -162,6 +174,21 @@ class _MainPageState extends State<MainPage> {
                       })
                   ),
                   const Divider(height:2.0, color: Colors.black45),
+                  ListTile(
+                      leading: const Padding(
+                          padding: EdgeInsets.only(left:12, top:5),
+                          child:Icon(Icons.settings, color: Colors.black)
+                      ),
+                      title: const Text('Settings', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
+                      subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('설정', style:TextStyle(color:Colors.grey))),
+                      trailing: const Icon(Icons.navigate_next),
+                      contentPadding: const EdgeInsets.symmetric(vertical:10),
+                      onTap: () => setState((){
+                        selectedIndex = _settingIndex;
+                        _getPageView(selectedIndex);
+                      })
+                  ),
+                  const Divider(height:2.0, color: Colors.black45),
                 ])
         );
     }
@@ -172,38 +199,42 @@ class _MainPageState extends State<MainPage> {
       return NVMABottomNavigationBar(_getPageView, currentPage:'noise');
     } else if(index == 1) {
       return NVMABottomNavigationBar(_getPageView, currentPage:'vibration');
-    }
-    else {
+    } else if(index == 2) {
+      return NVMABottomNavigationBar(_getPageView, currentPage:'setting');
+    } else {
       return const SizedBox();
     }
   }
 
   void _getBluetoothConnections() {
-    if (bluetoothOptions.map.isNotEmpty) {
-      bluetoothOptions.map.forEach((k, v) {
-        BlueConnection _btConnection = BlueConnection();
-        _btConnection.name = v;
-        _btConnection.address = k;
-        _btConnection = BlueConnection();
-        var _btParser = Esp32AdxlParser(0, sensorTimeDataModelsMap);
-        var _btProcessor = ConvertToByteDataProcessor()..setDestination(Logger(appName));
-        _btParser.setProcessor(_btProcessor);
-        _btConnection.setParser(_btParser);
-        for (int i = 1; i < 4; i++) {
-          if (!sensorOptions.map.containsKey('di' + ((_btConnectionList.length * 3) + i).toString() + "_type")) {
-            sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_type"] = "Vibration";
-            sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_sensitivity"] = 26122.0;
-            if (i == 1) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "X";
-            else if (i == 2) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "Y";
-            else if (i == 3) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "Z";
+    bluetoothOptions.load().then((_){
+      if (bluetoothOptions.map.isNotEmpty) {
+        bluetoothOptions.map.forEach((k, v) {
+          BlueConnection _btConnection = BlueConnection();
+          _btConnection.name = v;
+          _btConnection.address = k;
+          _btConnection.setSensorOptions(sensorOptions);
+          var _btParser = Esp32AdxlParser(0, sensorTimeDataModelsMap);
+          var _btProcessor = ConvertToByteDataProcessor()..setDestination(Logger(appName));
+          _btParser.setProcessor(_btProcessor);
+          _btConnection.setParser(_btParser);
+          for (int i = 1; i < 4; i++) {
+            if (!sensorOptions.map.containsKey('di' + ((_btConnectionList.length * 3) + i).toString() + "_type")) {
+              sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_type"] = "Vibration";
+              sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_sensitivity"] = 26122.0;
+              if (i == 1) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "X";
+              else if (i == 2) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "Y";
+              else if (i == 3) sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString() + "_position"] = "Z";
+            }
+            sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString()] = 'disconnected';
+            sensorTimeDataModelsMap['di' + ((_btConnectionList.length * 3) + i).toString()] = RealtimeSensorTimeDataModel(4096, 2000);
+            sensorTimeDataModelsMap['di' + ((_btConnectionList.length * 3) + i).toString()]?.setOriginalDataSamplingRate(4000.0);
           }
-          sensorOptions.map['di' + ((_btConnectionList.length * 3) + i).toString()] = 'disconnected';
-          sensorTimeDataModelsMap['di' + ((_btConnectionList.length * 3) + i).toString()] = RealtimeSensorTimeDataModel(4096, 2000);
-          sensorTimeDataModelsMap['di' + ((_btConnectionList.length * 3) + i).toString()]?.setOriginalDataSamplingRate(4000.0);
-        }
-        sensorOptions.save();
-        _btConnectionList.add(_btConnection);
-      });
-    }
+          sensorOptions.save();
+          _btConnectionList.add(_btConnection);
+        });
+      }
+      setState((){});
+    });
   }
 }

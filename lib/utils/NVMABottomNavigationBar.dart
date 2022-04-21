@@ -14,6 +14,7 @@ class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
 
   static const int _noiseIndex = 0;
   static const int _vibrationIndex = 1;
+  static const int _settingIndex = 2;
 
   @override
   initState() {
@@ -26,6 +27,8 @@ class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
       _selectedIndex = _noiseIndex;
     } else if(widget.currentPage == 'vibration') {
       _selectedIndex = _vibrationIndex;
+    } else if(widget.currentPage == 'setting') {
+      _selectedIndex = _settingIndex;
     }
   }
 
@@ -35,6 +38,9 @@ class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
       widget.getPageView(index);
     }
     if(index == _vibrationIndex && widget.currentPage != 'vibration') {
+      widget.getPageView(index);
+    }
+    if(index == _settingIndex && widget.currentPage != 'setting') {
       widget.getPageView(index);
     }
     setState((){});
@@ -62,6 +68,10 @@ class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
             BottomNavigationBarItem(
                 icon: Icon(Icons.vibration),
                 label: "Vibration"
+            ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                label: "Setting"
             ),
           ],
           currentIndex: _selectedIndex,
