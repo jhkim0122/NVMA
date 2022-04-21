@@ -46,6 +46,7 @@ class _NoiseMeasurementPageState extends State<NoiseMeasurementPage> {
   void dispose() {
     super.dispose();
     _timer.cancel();
+    widget.micCapture.deactivate();
   }
 
   @override
