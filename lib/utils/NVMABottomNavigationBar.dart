@@ -1,48 +1,18 @@
 import 'package:flutter/material.dart';
 
 class NVMABottomNavigationBar extends StatefulWidget{
-  final String currentPage;
-  final Function(int index) getPageView;
-  const NVMABottomNavigationBar(this.getPageView, {this.currentPage="", key}) : super(key:key);
+  final Function(int index) setPageIndex;
+  final int selectedIndex;
+  const NVMABottomNavigationBar(this.setPageIndex, this.selectedIndex, {key}) : super(key:key);
 
   @override
   _NVMABottomNavigationBarState createState() => _NVMABottomNavigationBarState();
 }
 
 class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
-  int _selectedIndex = 0;
-
-  static const int _noiseIndex = 0;
-  static const int _vibrationIndex = 1;
-  static const int _settingIndex = 2;
-
-  @override
-  initState() {
-    super.initState();
-    _getSelectedIndex();
-  }
-
-  _getSelectedIndex(){
-    if(widget.currentPage == 'noise') {
-      _selectedIndex = _noiseIndex;
-    } else if(widget.currentPage == 'vibration') {
-      _selectedIndex = _vibrationIndex;
-    } else if(widget.currentPage == 'setting') {
-      _selectedIndex = _settingIndex;
-    }
-  }
 
   _onTappedItem(index) {
-    _selectedIndex = index;
-    if(index == _noiseIndex && widget.currentPage != 'noise') {
-      widget.getPageView(index);
-    }
-    if(index == _vibrationIndex && widget.currentPage != 'vibration') {
-      widget.getPageView(index);
-    }
-    if(index == _settingIndex && widget.currentPage != 'setting') {
-      widget.getPageView(index);
-    }
+    widget.setPageIndex(index);
     setState((){});
   }
 
@@ -62,6 +32,10 @@ class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
           elevation: 0,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: "Main"
+            ),
+            BottomNavigationBarItem(
                 icon: Icon(Icons.mic),
                 label: "Noise"
             ),
@@ -74,7 +48,7 @@ class _NVMABottomNavigationBarState extends State<NVMABottomNavigationBar> {
                 label: "Setting"
             ),
           ],
-          currentIndex: _selectedIndex,
+          currentIndex: widget.selectedIndex,
           selectedItemColor: Colors.deepOrange,
           onTap: (index) => _onTappedItem(index),
         ));

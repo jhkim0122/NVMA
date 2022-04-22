@@ -22,10 +22,10 @@ class MainPage extends StatefulWidget{
 }
 
 class _MainPageState extends State<MainPage> {
-  final int _mainIndex = 9999;
-  final int _noiseIndex = 0;
-  final int _vibIndex = 1;
-  final int _settingIndex = 2;
+  final int _mainIndex = 0;
+  final int _noiseIndex = 1;
+  final int _vibIndex = 2;
+  final int _settingIndex = 3;
   late int selectedIndex;
 
   var sensorTimeDataModelsMap = Map<String, RealtimeSensorTimeDataModel>();
@@ -36,7 +36,8 @@ class _MainPageState extends State<MainPage> {
   var sensorOptions = SensorOptions();
   var bluetoothOptions = BluetoothOptions();
 
-  var _pageView;
+  var _pageViewList = [];
+  final PageController _pageController = PageController(initialPage: 0);
 
   @override
   initState() {
@@ -61,149 +62,108 @@ class _MainPageState extends State<MainPage> {
     sensorOptions.load();
     _getBluetoothConnections();
 
-    _getPageView(selectedIndex);
+    _pageViewList = [for(int i=0; i<=_settingIndex; i++)_getBody(i)];
   }
 
   @override
   Widget build(BuildContext context) {
-    return _pageView;
-  }
-
-  void _getPageView(index){
-    _pageView = WillPopScope(
-        onWillPop: () async{
-          if(selectedIndex != _mainIndex) {
-            selectedIndex = _mainIndex;
-            _getPageView(selectedIndex);
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.grey.shade50,
+        title: Text(_getAppBarText(selectedIndex), style: const TextStyle(fontSize:20, fontWeight: FontWeight.bold)),
+        elevation:3.0,
+      ),
+      body: PageView.builder(
+          controller: _pageController,
+          itemBuilder: (BuildContext context, int index) => _pageViewList[index],
+          onPageChanged: (index) {
+            selectedIndex = index;
             setState((){});
-            return false;
-          }
-          else {
-            return true;
-          }
-        },
-        child: Scaffold(
-          appBar: _getAppBar(index),
-          body: _getBody(index),
-          bottomNavigationBar: _getBottomNavigationBar(index),
-      )
+          },
+          itemCount: _pageViewList.length,
+      ),
+      bottomNavigationBar: NVMABottomNavigationBar(_setPageIndex, selectedIndex),
     );
-    setState((){});
   }
 
-  AppBar _getAppBar(index){
-    if(index == 0){
-      return AppBar(
-        leading : IconButton(
-            icon : const Icon(Icons.arrow_back),
-            onPressed:() => setState((){
-              selectedIndex = _mainIndex;
-              _getPageView(selectedIndex);
-            }),
-        ),
-        title: const Text("Noise Measurement Page"),
-        elevation:3.0,
-      );
-    } else if(index == 1) {
-      return AppBar(
-        leading : IconButton(
-          icon : const Icon(Icons.arrow_back),
-          onPressed:() => setState((){selectedIndex = _mainIndex;
-          _getPageView(selectedIndex);}),
-        ),
-        title: const Text("Vibration Measurement Page"),
-        elevation:3.0,
-      );
-    } else if(index == 2) {
-      return AppBar(
-        leading : IconButton(
-          icon : const Icon(Icons.arrow_back),
-          onPressed:() => setState((){selectedIndex = _mainIndex;
-          _getPageView(selectedIndex);}),
-        ),
-        title: const Text("Setting Page"),
-        elevation:3.0,
-      );
-    } else { // Main page
-      return AppBar(
-        title: const Text("Noise Vibration Measurement App", style: TextStyle(fontSize:20, fontWeight: FontWeight.bold)),
-        elevation:3.0,
-      );
-    }
+  String _getAppBarText(index){
+    if(index == _mainIndex){return "Noise Vibration Measurement App";}
+    else if(index == _noiseIndex){return "Noise Measurement Page";}
+    else if(index == _vibIndex) {return "Vibration Measurement Page";}
+    else if(index == _settingIndex) {return "Setting Page";}
+    else {return "";}
   }
 
   Widget _getBody(index){
-    if(index == 0){
-      return NoiseMeasurementPage(_micCapture, sensorTimeDataModelsMap);
-    } else if(index == 1) {
-      return VibrationMeasurementPage(_btConnectionList, _tcpConnection, sensorTimeDataModelsMap);
-    } else if(index == 2) {
-      return SettingPage(_micCapture, _btConnectionList, _tcpConnection, sensorTimeDataModelsMap, bluetoothOptions, sensorOptions);
-    } else { // Main page
+    if(index == _mainIndex){
       return SingleChildScrollView(
-            padding: const EdgeInsets.only(top:10, left:15, right:15),
-            child: Column(
-                children:[
-                  ListTile(
-                      leading: const Padding(
-                          padding: EdgeInsets.only(left:10),
-                          child: Icon(Icons.mic, color: Colors.black)
-                      ),
-                      title: const Text('Noise Measurement', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
-                      subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('내장마이크로 소음 측정', style:TextStyle(color:Colors.grey))),
-                      trailing: const Icon(Icons.navigate_next),
-                      contentPadding: const EdgeInsets.symmetric(vertical:10),
-                      onTap: () => setState((){
-                        selectedIndex = _noiseIndex;
-                        _getPageView(selectedIndex);
-                      })
-                  ),
-                  const Divider(height:2.0, color: Colors.black45),
-                  ListTile(
-                      leading: const Padding(
-                          padding: EdgeInsets.only(left:12, top:5),
-                          child:Icon(Icons.vibration, color: Colors.black)
-                      ),
-                      title: const Text('Vibration Measurement', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
-                      subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('무선 센서로 진동 측정', style:TextStyle(color:Colors.grey))),
-                      trailing: const Icon(Icons.navigate_next),
-                      contentPadding: const EdgeInsets.symmetric(vertical:10),
-                      onTap: () => setState((){
-                        selectedIndex = _vibIndex;
-                        _getPageView(selectedIndex);
-                      })
-                  ),
-                  const Divider(height:2.0, color: Colors.black45),
-                  ListTile(
-                      leading: const Padding(
-                          padding: EdgeInsets.only(left:12, top:5),
-                          child:Icon(Icons.settings, color: Colors.black)
-                      ),
-                      title: const Text('Settings', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
-                      subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('설정', style:TextStyle(color:Colors.grey))),
-                      trailing: const Icon(Icons.navigate_next),
-                      contentPadding: const EdgeInsets.symmetric(vertical:10),
-                      onTap: () => setState((){
-                        selectedIndex = _settingIndex;
-                        _getPageView(selectedIndex);
-                      })
-                  ),
-                  const Divider(height:2.0, color: Colors.black45),
-                ])
-        );
+          padding: const EdgeInsets.only(top:10, left:15, right:15),
+          child: Column(
+              children:[
+                ListTile(
+                    leading: const Padding(
+                        padding: EdgeInsets.only(left:12, top:5),
+                        child: Icon(Icons.mic, color: Colors.black)
+                    ),
+                    title: const Text('Noise Measurement', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
+                    subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('내장마이크로 소음 측정', style:TextStyle(color:Colors.grey))),
+                    trailing: const Icon(Icons.navigate_next),
+                    contentPadding: const EdgeInsets.symmetric(vertical:10),
+                    onTap: () => setState((){
+                      selectedIndex = _noiseIndex;
+                      _setPageIndex(selectedIndex);
+                    })
+                ),
+                const Divider(height:2.0, color: Colors.black45),
+                ListTile(
+                    leading: const Padding(
+                        padding: EdgeInsets.only(left:12, top:5),
+                        child:Icon(Icons.vibration, color: Colors.black)
+                    ),
+                    title: const Text('Vibration Measurement', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
+                    subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('무선 센서로 진동 측정', style:TextStyle(color:Colors.grey))),
+                    trailing: const Icon(Icons.navigate_next),
+                    contentPadding: const EdgeInsets.symmetric(vertical:10),
+                    onTap: () => setState((){
+                      selectedIndex = _vibIndex;
+                      _setPageIndex(selectedIndex);
+                    })
+                ),
+                const Divider(height:2.0, color: Colors.black45),
+                ListTile(
+                    leading: const Padding(
+                        padding: EdgeInsets.only(left:12, top:5),
+                        child:Icon(Icons.settings, color: Colors.black)
+                    ),
+                    title: const Text('Settings', style:TextStyle(fontSize:18, fontWeight: FontWeight.bold)),
+                    subtitle: const Padding(padding:EdgeInsets.only(left:5, top:10), child:Text('설정', style:TextStyle(color:Colors.grey))),
+                    trailing: const Icon(Icons.navigate_next),
+                    contentPadding: const EdgeInsets.symmetric(vertical:10),
+                    onTap: () => setState((){
+                      selectedIndex = _settingIndex;
+                      _setPageIndex(selectedIndex);
+                    })
+                ),
+                const Divider(height:2.0, color: Colors.black45),
+              ])
+      );
+    } else if(index == _noiseIndex){
+      return NoiseMeasurementPage(_micCapture, sensorTimeDataModelsMap);
+    } else if(index == _vibIndex) {
+      return VibrationMeasurementPage(_btConnectionList, _tcpConnection, sensorTimeDataModelsMap);
+    } else if(index == _settingIndex) {
+      return SettingPage(_micCapture, _btConnectionList, _tcpConnection, sensorTimeDataModelsMap, bluetoothOptions, sensorOptions);
+    } else {
+      assert(false);
+      return const SizedBox();
     }
   }
 
-  Widget _getBottomNavigationBar(index){
-    if(index == 0){
-      return NVMABottomNavigationBar(_getPageView, currentPage:'noise');
-    } else if(index == 1) {
-      return NVMABottomNavigationBar(_getPageView, currentPage:'vibration');
-    } else if(index == 2) {
-      return NVMABottomNavigationBar(_getPageView, currentPage:'setting');
-    } else {
-      return const SizedBox();
-    }
+  _setPageIndex(index){
+    selectedIndex = index;
+    _pageController.animateToPage(index, duration: const Duration(milliseconds: 500), curve: Curves.ease);
+    setState((){});
   }
 
   void _getBluetoothConnections() {
