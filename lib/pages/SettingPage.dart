@@ -35,19 +35,20 @@ class _SettingPageState extends State<SettingPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children:[
-          Padding(
-              padding: const EdgeInsets.only(top:20, left:20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child:Text("Connection Setting", style: TextStyle(color:Colors.blue.shade700, fontWeight: FontWeight.w700, fontSize:25))
-              )
-          ),
+          const SizedBox(height:10),
           getCard(
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Padding(
+                    padding: const EdgeInsets.only(left:5, bottom:10),
+                    child: Align(
+                        alignment: Alignment.centerLeft,
+                        child:Text("Connection Setting", style: TextStyle(color:Colors.blue.shade700, fontWeight: FontWeight.w700, fontSize:25))
+                    )
+                ),
                 const Padding(
-                  padding:EdgeInsets.only(bottom:5, right: 20),
+                  padding:EdgeInsets.only(bottom:5, right: 20, left:20),
                   child: Text("Vibration Bluetooth Sensors", style: TextStyle(fontSize:20, fontWeight: FontWeight.bold)),),
                 SingleChildScrollView(
                   padding: const EdgeInsets.only(left:10),
