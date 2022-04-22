@@ -39,6 +39,8 @@ class _MainPageState extends State<MainPage> {
   var _pageViewList = [];
   final PageController _pageController = PageController(initialPage: 0);
 
+  bool _logging = false;
+
   @override
   initState() {
     super.initState();
@@ -83,6 +85,24 @@ class _MainPageState extends State<MainPage> {
           },
           itemCount: _pageViewList.length,
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: (selectedIndex == _noiseIndex || selectedIndex == _vibIndex) ?
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(color: Colors.grey, width:2)
+            ),
+            padding: const EdgeInsets.all(5),
+            margin: const EdgeInsets.only(bottom:80),
+            child: IconButton(
+                icon: Icon(_logging?Icons.stop:Icons.fiber_manual_record, size:45, color: Colors.red),
+                onPressed:(){
+                  _logging = !_logging;
+                  setState(() {});
+                },
+                padding:EdgeInsets.zero)
+          ) : null,
       bottomNavigationBar: NVMABottomNavigationBar(_setPageIndex, selectedIndex),
     );
   }
